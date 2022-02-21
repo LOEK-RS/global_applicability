@@ -9,6 +9,7 @@ library(tidyverse)
 library(stars)
 library(raster)
 library(caret)
+library(s2, lib.loc = palmalib)
 library(CAST, lib.loc = palmalib)
 
 

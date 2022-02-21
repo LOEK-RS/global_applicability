@@ -4,7 +4,7 @@
 library(rmarkdown)
 
 
-modelnames = c("reproduced_randomcv", "reproduced_spatialcv")
+modelnames = c("reproduced_randomcv", "reproduced_spatialcv", "svs_spatialcv", "svs_randomcv")
 
 
 for(i in modelnames){
