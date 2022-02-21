@@ -9,7 +9,7 @@ library(tidyverse)
 library(stars)
 library(raster)
 library(caret)
-library(CAST, lib.loc = "/home/m/marvin/")
+library(CAST, lib.loc = palmalib)
 
 
 list.files("pipeline/", full.names = TRUE) %>% map(source)
