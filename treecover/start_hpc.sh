@@ -30,4 +30,4 @@
 # run the application
 module add palma/2021a
 module add foss R GDAL
-R CMD BATCH --vanilla hpc_workflow_reproduced_spatial.R
+R CMD BATCH --vanilla hpc_workflow_reproduced_random.R
