@@ -1,22 +1,23 @@
 # workflow svs
 
-source("setup.R")
+source("setup_hpc.R")
 
-modelname = "svs10"
-
+modelname = "svs_spatialcv"
 initModel(modelname)
 
 
 # static input
 training_samples = st_read("data/training_samples.gpkg")
 global_sample = st_read("data/misc/global_sample.gpkg")
-predictors = stack(list.files("data/predictors/", full.name = TRUE, pattern = ".grd"))
+predictors = stack(list.files("/scratch/tmp/mludwig2/global_applicability/data/nematodes/predictors/",
+                              full.name = TRUE, pattern = ".grd$"))
 predictor_names = names(predictors)
-folds = readRDS("reproduced10/folds.RDS")
+
+# same spatial folds as reproduced model
+folds = readRDS("data/temp/folds.RDS")
 
 
 ##### Modelling
-
 hyperparameter = expand.grid(mtry = 3,
                              splitrule = "variance",
                              min.node.size = 5)
@@ -38,7 +39,7 @@ fold_fd = geodistance(modelname, training_samples,
                       modeldomain = global_sample, distance = "feature",
                       cvfolds = folds, predictors = svs$selectedvars)
 
-plot_distance(fold_fd)
+
 
 # postprocessing
 
