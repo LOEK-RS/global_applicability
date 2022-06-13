@@ -25,6 +25,7 @@ fold_fd = geodistance(modelname, training_samples,
                       cvfolds = folds, predictors = predictor_names)
 
 
+
 plot_distance(fold_gd)
 plot_distance(fold_fd)
 
