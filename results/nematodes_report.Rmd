@@ -1,0 +1,322 @@
+---
+title: "Nematodes Report"
+author: "Marvin Ludwig"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(sf)
+library(stars)
+library(raster)
+library(caret)
+library(CAST)
+library(tmap)
+library(scales)
+library(kableExtra)
+library(viridis)
+library(tmap)
+library(ggpubr)
+library(viridis)
+library(tidyverse)
+
+sf_use_s2(FALSE)
+
+source("results/fun_countAOA.R")
+source("results/fun_plotdistance.R")
+
+```
+
+
+# Cross Validation Setup
+
+
+## Global Spatial CV Folds
+
+```{r}
+training_samples = st_read("nematodes/data/training_samples.gpkg", quiet = TRUE)
+global_grid = st_read("nematodes/reproduced_spatialcv/spatial_folds_grid.gpkg", quiet = TRUE)
+
+# fix dateline wrap
+global_grid[3,]$geom[[1]][[1]][c(2,3),1] <- 180
+global_grid[11,]$geom[[1]][[1]][c(2,3),1] <- 180
+
+# reproject
+training_samples = st_transform(training_samples, "+proj=eqearth")
+global_grid = st_transform(global_grid, "+proj=eqearth")
+
+
+
+
+
+# tmap setup
+countries = rnaturalearth::countries110 %>%
+    st_as_sf() %>%
+    filter(geounit != "Antarctica") %>%
+    st_transform("+proj=eqearth") %>% 
+    st_union()
+
+
+col_pal = c("#7FFFD4", "#FFE4C4", "#FF7F00", "#FF3030", "#1E90FF",
+            "#999999", "#C0FF3E", "#698B22", "#27408B", "#EE82EE")
+names(col_pal) = seq(0,9,1)
+
+
+
+
+tm_shape(countries)+
+    tm_borders()+
+tm_shape(global_grid)+
+    tm_polygons(title = "Fold", col = "fold", style = "cat", pal = col_pal)+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+
+
+```
+
+## Global Training Sample Distribution
+
+```{r}
+
+
+global_grid$samples = lengths(st_intersects(global_grid, training_samples))
+global_grid = global_grid %>% filter(samples != 0)
+
+
+tm_shape(countries)+
+    tm_borders()+
+    tm_shape(global_grid)+
+    tm_polygons(title = "Training Samples [n]", col = "samples", style = "log10", pal = viridis(50), legend.is.portrait=FALSE)+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+```
+
+
+## Geodist Random CV 
+
+```{r, echo = FALSE}
+geodist = readRDS("nematodes/reproduced_randomcv/training_geodist.RDS")
+plot_distance(geodist)
+```
+
+## Geodist Spatial CV
+
+```{r, echo = FALSE}
+geodist = readRDS("nematodes/reproduced_spatialcv/training_geodist.RDS")
+plot_distance(geodist)
+```
+
+
+# Reproduced Model
+
+```{r, include = FALSE}
+modelr = readRDS("nematodes/reproduced_randomcv/rfmodel.RDS")
+models = readRDS("nematodes/reproduced_spatialcv/rfmodel.RDS")
+```
+
+## Variable Importance
+
+```{r}
+plot(varImp(modelr, scale = FALSE))
+```
+
+
+
+## Random CV 
+
+```{r, include = FALSE}
+d = read_stars("nematodes/reproduced_randomcv/results/pred_di_aoa.grd")
+d = split(d, "band")
+aoa = select(d, "AOA")
+```
+
+
+```{r}
+print(paste0("Random CV R2: ", round(CAST::global_validation(modelr)[2], 2), " --- Assumed Mapping error inside AOA."))
+```
+
+```{r}
+print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
+```
+
+
+
+
+
+```{r}
+aoa[aoa == 1] = NA
+
+tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(select(d, "prediction"))+
+    tm_raster(palette = viridis::mako(50), style = "log10",
+              legend.is.portrait = TRUE, breaks = c(2,3,4), title = "Nematodes\nper 100g soil")+
+    tm_shape(aoa)+
+    tm_raster(palette = c("0" = "darkgoldenrod1"),
+              title = "", legend.show = TRUE, labels = c("0" = "Outside AOA"))+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+```
+
+
+
+
+## Spatial CV R2
+
+
+
+
+```{r, include = FALSE}
+d = read_stars("nematodes/reproduced_spatialcv/results/pred_di_aoa.grd")
+d = split(d, "band")
+aoa = select(d, "AOA")
+```
+
+```{r}
+print(paste0("Spatial CV R2: ", round(CAST::global_validation(models)[2], 2), " --- Assumed Mapping error inside AOA."))
+```
+
+
+```{r}
+print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
+```
+
+
+```{r}
+aoa[aoa == 1] = NA
+
+tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(select(d, "prediction"))+
+    tm_raster(palette = viridis::mako(50), style = "log10",
+              legend.is.portrait = TRUE, breaks = c(2,3,4), title = "Nematodes\nper 100g soil")+
+    tm_shape(aoa)+
+    tm_raster(palette = c("0" = "darkgoldenrod1"),
+              title = "", legend.show = TRUE, labels = c("0" = "Outside AOA"))+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+```
+
+
+
+# Simplified Model
+
+```{r, include = FALSE}
+modelr = readRDS("nematodes/svs_randomcv/rfmodel.RDS")
+models = readRDS("nematodes/svs_spatialcv/rfmodel.RDS")
+```
+
+## Variable Importance
+
+```{r}
+plot(varImp(modelr, scale = FALSE))
+```
+
+
+
+
+## Random CV 
+
+```{r, include = FALSE}
+d = read_stars("nematodes/svs_randomcv/results/pred_di_aoa.grd")
+d = split(d, "band")
+aoa = select(d, "AOA")
+```
+
+
+```{r}
+print(paste0("Random CV R2: ", round(CAST::global_validation(modelr)[2], 2), " --- Assumed Mapping error inside AOA."))
+```
+
+```{r}
+print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
+```
+
+
+
+
+
+```{r}
+aoa[aoa == 1] = NA
+
+tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(select(d, "prediction"))+
+    tm_raster(palette = viridis::mako(50), style = "log10",
+              legend.is.portrait = TRUE, breaks = c(2,3,4), title = "Nematodes\nper 100g soil")+
+    tm_shape(aoa)+
+    tm_raster(palette = c("0" = "darkgoldenrod1"),
+              title = "", legend.show = TRUE, labels = c("0" = "Outside AOA"))+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+```
+
+
+
+
+## Spatial CV R2
+
+
+
+
+```{r, include = FALSE}
+d = read_stars("nematodes/svs_spatialcv/results/pred_di_aoa.grd")
+d = split(d, "band")
+aoa = select(d, "AOA")
+```
+
+```{r}
+print(paste0("Spatial CV R2: ", round(CAST::global_validation(models)[2], 2), " --- Assumed Mapping error inside AOA."))
+```
+
+
+```{r}
+print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
+```
+
+
+```{r}
+aoa[aoa == 1] = NA
+
+tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(select(d, "prediction"))+
+    tm_raster(palette = viridis::mako(50), style = "log10",
+              legend.is.portrait = TRUE, breaks = c(2,3,4), title = "Nematodes\nper 100g soil")+
+    tm_shape(aoa)+
+    tm_raster(palette = c("0" = "darkgoldenrod1"),
+              title = "", legend.show = TRUE, labels = c("0" = "Outside AOA"))+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+```
+
+
+
+
+
+

@@ -25,11 +25,6 @@ fold_fd = geodistance(modelname, training_samples,
                       cvfolds = folds, predictors = predictor_names)
 
 
-
-plot_distance(fold_gd)
-plot_distance(fold_fd)
-
-
 ###### Modelling
 
 hyperparameter = expand.grid(mtry = 3,
@@ -40,13 +35,13 @@ hyperparameter = expand.grid(mtry = 3,
 model = train_model(modelname, training_samples, predictors = predictor_names, response = "Total_Number",
                     folds = folds, hyperparameter = hyperparameter)
 
+# apply model
 pre = pi_prediction(modelname, model, predictor_layers = predictors)
 tdi = pi_trainDI(modelname, model)
 aoa = pi_aoa(modelname, trainDI = tdi, model, predictor_layers = predictors)
 
 
 # postprocessing
-
 postmask = raster("data/misc/postprocessing_mask.grd")
 
 

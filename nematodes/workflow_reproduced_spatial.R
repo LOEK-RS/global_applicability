@@ -13,7 +13,7 @@ predictor_names = names(predictors)
 
 
 
-folds = create_folds_spatial(modelname, training_samples, n_folds = 10, gridsize = 13, seed = 11)
+folds = create_folds_spatial(modelname, training_samples, n_folds = 10, gridsize = 6, seed = 11)
 
 fold_gd = geodistance(modelname, training_samples,
                              modeldomain = global_sample, distance = "geo",
@@ -22,10 +22,6 @@ fold_gd = geodistance(modelname, training_samples,
 fold_fd = geodistance(modelname, training_samples,
                       modeldomain = global_sample, distance = "feature",
                       cvfolds = folds, predictors = predictor_names)
-
-
-plot_distance(fold_gd)
-plot_distance(fold_fd)
 
 
 ###### Modelling
