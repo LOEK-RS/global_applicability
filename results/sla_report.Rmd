@@ -52,7 +52,7 @@ col_pal = c("#7FFFD4", "#FFE4C4", "#FF7F00", "#FF3030", "#1E90FF",
             "#999999", "#C0FF3E", "#698B22", "#27408B", "#EE82EE")
 names(col_pal) = seq(0,9,1)
 
-tm_shape(countries)+
+sla_folds = tm_shape(countries)+
     tm_borders()+
 tm_shape(global_grid)+
     tm_polygons(title = "Fold", col = "fold", style = "cat", pal = col_pal)+
@@ -63,7 +63,8 @@ tm_shape(global_grid)+
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
 
-
+tmap_save(sla_folds, filename = "results/figures/sla_folds.svg", width = 15, height = 10, units = "cm")
+sla_folds
 ```
 
 ## Global Training Sample Distribution
@@ -73,7 +74,7 @@ tm_shape(global_grid)+
 
 global_grid$samples = lengths(st_intersects(global_grid, training_samples))
 
-tm_shape(countries)+
+sla_samples = tm_shape(countries)+
     tm_borders()+
     tm_shape(global_grid)+
     tm_polygons(title = "Training Samples [n]", col = "samples", style = "log10", pal = viridis(50), legend.is.portrait=FALSE)+
@@ -83,6 +84,10 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+
+tmap_save(sla_samples, filename = "results/figures/sla_samples.svg", width = 15, height = 10, units = "cm")
+sla_samples
 ```
 
 
@@ -140,7 +145,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+sla_rep_random = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "cont",
@@ -154,6 +159,10 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(sla_rep_random, filename = "results/figures/sla_reproduced_random.svg", width = 15, height = 10, units = "cm")
+sla_rep_random
+
 ```
 
 
@@ -183,7 +192,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+sla_rep_spatial = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "cont",
@@ -197,6 +206,9 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(sla_rep_spatial, filename = "results/figures/sla_reproduced_spatial.svg", width = 15, height = 10, units = "cm")
+sla_rep_spatial
 ```
 
 
@@ -241,7 +253,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+sla_svs_random = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "cont",
@@ -255,6 +267,9 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(sla_svs_random, filename = "results/figures/sla_svs_random.svg", width = 15, height = 10, units = "cm")
+sla_svs_random
 ```
 
 
@@ -284,7 +299,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+sla_svs_spatial = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "cont",
@@ -298,6 +313,11 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(sla_svs_spatial, filename = "results/figures/sla_svs_spatial.svg", width = 15, height = 10, units = "cm")
+sla_svs_spatial
+
+
 ```
 
 

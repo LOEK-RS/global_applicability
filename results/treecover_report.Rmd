@@ -52,7 +52,7 @@ col_pal = c("#7FFFD4", "#FFE4C4", "#FF7F00", "#FF3030", "#1E90FF",
             "#999999", "#C0FF3E", "#698B22", "#27408B", "#EE82EE")
 names(col_pal) = seq(0,9,1)
 
-tm_shape(countries)+
+tree_folds = tm_shape(countries)+
     tm_borders()+
 tm_shape(global_grid)+
     tm_polygons(title = "Fold", col = "fold", style = "cat", pal = col_pal, border.alpha = 0)+
@@ -63,7 +63,8 @@ tm_shape(global_grid)+
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
 
-
+tmap_save(tree_folds, filename = "results/figures/treecover_folds.svg", width = 15, height = 10, units = "cm")
+tree_folds
 ```
 
 ## Global Training Sample Distribution
@@ -74,7 +75,7 @@ tm_shape(global_grid)+
 global_grid$samples = lengths(st_intersects(global_grid, training_samples))
 global_grid = global_grid %>% filter(samples != 0) # 4 polygons were empty (points directly on the border)
 
-tm_shape(countries)+
+tree_samples = tm_shape(countries)+
     tm_borders()+
     tm_shape(global_grid)+
     tm_polygons(title = "Training Samples [n]", col = "samples", style = "log10",
@@ -85,6 +86,11 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+
+tmap_save(tree_samples, filename = "results/figures/treecover_samples.svg", width = 15, height = 10, units = "cm")
+tree_samples
+
 ```
 
 
@@ -142,7 +148,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+tree_rep_random = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "cont",
@@ -156,6 +162,11 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+
+tmap_save(tree_rep_random, filename = "results/figures/treecover_reproduced_random.svg", width = 15, height = 10, units = "cm")
+tree_rep_random
+
 ```
 
 
@@ -185,7 +196,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+tree_rep_spatial = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "cont",
@@ -199,6 +210,9 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(tree_rep_spatial, filename = "results/figures/treecover_reproduced_spatial.svg", width = 15, height = 10, units = "cm")
+tree_rep_spatial
 ```
 
 

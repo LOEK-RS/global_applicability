@@ -65,7 +65,7 @@ names(col_pal) = seq(0,9,1)
 
 
 
-tm_shape(countries)+
+nem_folds = tm_shape(countries)+
     tm_borders()+
 tm_shape(global_grid)+
     tm_polygons(title = "Fold", col = "fold", style = "cat", pal = col_pal)+
@@ -76,7 +76,8 @@ tm_shape(global_grid)+
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
 
-
+tmap_save(nem_folds, filename = "results/figures/nematodes_folds.svg", width = 15, height = 10, units = "cm")
+nem_folds
 ```
 
 ## Global Training Sample Distribution
@@ -88,7 +89,7 @@ global_grid$samples = lengths(st_intersects(global_grid, training_samples))
 global_grid = global_grid %>% filter(samples != 0)
 
 
-tm_shape(countries)+
+nem_samples = tm_shape(countries)+
     tm_borders()+
     tm_shape(global_grid)+
     tm_polygons(title = "Training Samples [n]", col = "samples", style = "log10", pal = viridis(50), legend.is.portrait=FALSE)+
@@ -98,6 +99,9 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(nem_samples,filename = "results/figures/nematodes_samples.svg", width = 15, height = 10, units = "cm")
+nem_samples
 ```
 
 
@@ -155,7 +159,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+nem_rep_random = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "log10",
@@ -169,6 +173,10 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+
+tmap_save(nem_rep_random, filename = "results/figures/nematodes_reproduced_random.svg", width = 15, height = 10, units = "cm")
+nem_rep_random
 ```
 
 
@@ -198,7 +206,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+nem_rep_spatial = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "log10",
@@ -212,6 +220,10 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(nem_rep_spatial, filename = "results/figures/nematodes_reproduced_spatial.svg", width = 15, height = 10, units = "cm")
+nem_rep_spatial
+
 ```
 
 
@@ -256,7 +268,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+nem_svs_random = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "log10",
@@ -270,6 +282,9 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+tmap_save(nem_svs_random, filename = "results/figures/nematodes_svs_random.svg", width = 15, height = 10, units = "cm")
+nem_svs_random
 ```
 
 
@@ -299,7 +314,7 @@ print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
 ```{r}
 aoa[aoa == 1] = NA
 
-tm_shape(countries)+
+nem_svs_spatial = tm_shape(countries)+
     tm_polygons(col = "grey80")+
     tm_shape(select(d, "prediction"))+
     tm_raster(palette = viridis::mako(50), style = "log10",
@@ -313,6 +328,12 @@ tm_shape(countries)+
               panel.show = FALSE,
               earth.boundary = c(-180, -88, 180, 88),
               earth.boundary.color = "transparent")
+
+
+
+tmap_save(nem_svs_spatial, filename = "results/figures/nematodes_svs_spatial.svg", width = 15, height = 10, units = "cm")
+nem_svs_spatial
+
 ```
 
 
