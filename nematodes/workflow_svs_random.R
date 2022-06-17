@@ -23,16 +23,18 @@ hyperparameter = expand.grid(mtry = 3,
                              min.node.size = 5)
 
 
-svs = readRDS("svs_spatialcv/rfmodel.RDS")
+
+# reduce predictors to spatial variable selection model
+svs_model = readRDS("svs_spatialcv/rfmodel.RDS")
 
 
-model = train_model(modelname, training_samples, predictors = svs$selectedvars, 
+model = train_model(modelname, training_samples, predictors = svs_model$selectedvars, 
                     response = "Total_Number", folds = folds, hyperparameter = hyperparameter)
 
 
-pre = pi_prediction(modelname, model = svs, predictor_layers = predictors)
-tdi = pi_trainDI(modelname, svs)
-aoa = pi_aoa(modelname, trainDI = tdi, predictor_layers = predictors, model = svs)
+pre = pi_prediction(modelname, model = model, predictor_layers = predictors)
+tdi = pi_trainDI(modelname, model)
+aoa = pi_aoa(modelname, trainDI = tdi, predictor_layers = predictors, model = model)
 
 
 # feature distances after the variable selection
