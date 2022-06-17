@@ -1,0 +1,144 @@
+---
+title: "Density Distributions"
+author: "Marvin Ludwig"
+output: html_document
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(ggpubr)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+
+source("results/fun_countAOA.R")
+source("results/fun_plotdistance.R")
+
+```
+
+
+# Geographic Sample Distance
+
+Create plots with density distribution including both CV strategies.
+
+
+
+
+```{r}
+
+fill_pal = c("sample-to-sample" = "#F8766D90",
+             "sample-to-prediction" = "#00BFC490",
+             "randomcv" = "#FFFFFF00",
+             "spatialcv" = "#FFFFFF00")
+
+line_pal = c("sample-to-sample" = "solid",
+             "sample-to-prediction" = "solid",
+             "randomcv" = "dotted",
+             "spatialcv" = "solid")
+
+size_pal = c("sample-to-sample" = 0.5,
+             "sample-to-prediction" = 0.5,
+             "randomcv" = 1,
+             "spatialcv" = 0.8)
+```
+
+
+
+
+
+## Nematodes
+
+
+```{r}
+
+gd_r = readRDS("nematodes/reproduced_randomcv/training_geodist.RDS")
+gd_s = readRDS("nematodes/reproduced_spatialcv/training_geodist.RDS")
+gd_r$between_folds$what = "randomcv"
+gd_s$between_folds$what = "spatialcv"
+
+gd = rbind(do.call(rbind, gd_r)[,1:2], gd_s$between_folds[,1:2])
+
+nematodes_plot = ggplot(gd, aes(x = dist, fill = what, linetype = what, size = what))+
+    geom_density()+
+    scale_size_manual(values = size_pal)+
+    scale_fill_manual(values = fill_pal)+
+    scale_linetype_manual(values = line_pal)+
+    scale_x_log10(name = paste0("Geographic Distance [m]"),
+                  breaks = trans_breaks("log10", function(x) 10^x),
+                  labels = trans_format("log10", math_format(10^.x)))+
+    #scale_x_continuous(name = "Featurespace Distance", limits = c(0,15))+
+    scale_y_continuous(name = "Density")+
+    ggpubr::theme_pubclean()+
+    theme(legend.position = "bottom", legend.title = element_blank())
+
+ggsave(plot = nematodes_plot, filename = "results/figures/nematodes_geodistance.svg", width = 16, height = 10, units = "cm")
+
+nematodes_plot
+```
+
+
+
+## SLA
+
+```{r}
+
+gd_r = readRDS("sla/reproduced_randomcv/training_geodist.RDS")
+gd_s = readRDS("sla/reproduced_spatialcv/training_geodist.RDS")
+gd_r$between_folds$what = "randomcv"
+gd_s$between_folds$what = "spatialcv"
+
+gd = rbind(do.call(rbind, gd_r)[,1:2], gd_s$between_folds[,1:2])
+
+sla_plot = ggplot(gd, aes(x = dist, fill = what, linetype = what, size = what))+
+    geom_density()+
+    scale_size_manual(values = size_pal)+
+    scale_fill_manual(values = fill_pal)+
+    scale_linetype_manual(values = line_pal)+
+    scale_x_log10(name = paste0("Geographic Distance [m]"),
+                  breaks = trans_breaks("log10", function(x) 10^x),
+                  labels = trans_format("log10", math_format(10^.x)))+
+    scale_y_continuous(name = "Density")+
+    ggpubr::theme_pubclean()+
+    theme(legend.position = "bottom", legend.title = element_blank())
+
+ggsave(plot = sla_plot, filename = "results/figures/sla_geodistance.svg", width = 16, height = 10, units = "cm")
+
+sla_plot
+```
+
+
+## Treecover
+
+
+```{r}
+
+gd_r = readRDS("treecover/reproduced_randomcv/training_geodist.RDS")
+gd_s = readRDS("treecover/reproduced_spatialcv/training_geodist.RDS")
+gd_r$between_folds$what = "randomcv"
+gd_s$between_folds$what = "spatialcv"
+
+gd = rbind(do.call(rbind, gd_r)[,1:2], gd_s$between_folds[,1:2])
+
+treecover_plot = ggplot(gd, aes(x = dist, fill = what, linetype = what, size = what))+
+    geom_density()+
+    scale_size_manual(values = size_pal)+
+    scale_fill_manual(values = fill_pal)+
+    scale_linetype_manual(values = line_pal)+
+    scale_x_log10(name = paste0("Geographic Distance [m]"),
+                  breaks = trans_breaks("log10", function(x) 10^x, n = 4),
+                  labels = trans_format("log10", math_format(10^.x)))+
+    scale_y_continuous(name = "Density")+
+    ggpubr::theme_pubclean()+
+    coord_cartesian(xlim = c(1000, 1000000))+
+    theme(legend.position = "bottom", legend.title = element_blank())
+
+treecover_plot
+
+ggsave(plot = treecover_plot, filename = "results/figures/treecover_geodistance.svg", width = 16, height = 10, units = "cm")
+
+
+```
+
