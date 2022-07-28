@@ -1,6 +1,15 @@
 # divide training data into folds
 
 
+create_folds_featurespace = function(modelname, training_samples, predictor_names, n_folds){
+    
+    # create feature space cluster
+    feature_folds = stats::kmeans(training_samples[predictor_names] %>% st_drop_geometry(), n_folds)$cluster
+    saveRDS(feature_folds, paste0(modelname, "/folds.RDS"))
+    return(feature_folds)
+}
+
+
 
 
 create_folds_random = function(modelname, training_samples, n_folds, seed){
