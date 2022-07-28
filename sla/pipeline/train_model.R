@@ -17,7 +17,7 @@ train_model = function(modelname, training_samples, predictors, response, folds,
                            method = "ranger",
                            tuneGrid = hyperparameter,
                            num.trees = 300,
-                           trControl = trainControl(method = "cv", number = 10,
+                           trControl = trainControl(method = "cv", number = length(unique(folds)),
                                                     index = i$index, indexOut = i$indexOut,
                                                     savePredictions = "final"),
                            importance = "impurity")
