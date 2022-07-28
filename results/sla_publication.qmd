@@ -1,0 +1,277 @@
+---
+title: "SLA Publication"
+author: "Marvin Ludwig"
+format: html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(sf)
+library(stars)
+library(raster)
+library(caret)
+library(CAST)
+library(tmap)
+library(scales)
+library(kableExtra)
+library(viridis)
+library(tmap)
+library(ggpubr)
+library(viridis)
+library(tidyverse)
+
+sf_use_s2(FALSE)
+
+source("results/fun_countAOA.R")
+source("results/fun_plotdistance.R")
+
+```
+
+
+# Cross Validation Setup
+
+
+## Global Spatial CV Folds
+
+```{r}
+training_samples = st_read("sla/data/training_samples.gpkg", quiet = TRUE)
+global_grid = st_read("sla/reproduced_spatialcv/spatial_folds_grid.gpkg", quiet = TRUE)
+
+# reproject
+training_samples = st_transform(training_samples, "+proj=eqearth")
+global_grid = st_transform(global_grid, "+proj=eqearth")
+
+# tmap setup
+countries = rnaturalearth::countries110 %>%
+    st_as_sf() %>%
+    filter(geounit != "Antarctica") %>%
+    st_transform("+proj=eqearth") %>% 
+    st_union()
+
+
+col_pal = c("#7FFFD4", "#FFE4C4", "#FF7F00", "#FF3030", "#1E90FF",
+            "#999999", "#C0FF3E", "#698B22", "#27408B", "#EE82EE")
+names(col_pal) = seq(0,9,1)
+
+sla_folds = tm_shape(countries)+
+    tm_borders()+
+tm_shape(global_grid)+
+    tm_polygons(title = "Fold", col = "fold", style = "cat", pal = col_pal)+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+
+tmap_save(sla_folds, filename = "results/figures/sla_folds.svg", width = 15, height = 10, units = "cm")
+sla_folds
+```
+
+## Global Training Sample Distribution
+
+```{r}
+
+
+global_grid$samples = lengths(st_intersects(global_grid, training_samples))
+global_grid = global_grid %>% filter(samples != 0)
+
+
+sla_samples = tm_shape(countries)+
+    tm_borders()+
+    tm_shape(global_grid)+
+    tm_polygons(title = "Training Samples [n]", col = "samples", style = "log10", pal = viridis(50), legend.is.portrait=FALSE)+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+
+tmap_save(sla_samples,filename = "results/figures/sla_samples.svg", width = 15, height = 10, units = "cm")
+sla_samples
+```
+
+## Geodist Random CV 
+
+```{r, echo = FALSE}
+geodist = readRDS("sla/reproduced_randomcv/training_geodist.RDS")
+plot_distance(geodist)
+```
+
+## Geodist Spatial CV
+
+```{r, echo = FALSE}
+geodist = readRDS("sla/reproduced_spatialcv/training_geodist.RDS")
+plot_distance(geodist)
+```
+
+# Reproduced Model
+
+```{r, include = FALSE}
+modelr = readRDS("sla/reproduced_randomcv/rfmodel.RDS")
+models = readRDS("sla/reproduced_spatialcv/rfmodel.RDS")
+```
+
+## Random CV 
+
+```{r, include = FALSE}
+d = read_stars("sla/reproduced_randomcv/results/pred_di_aoa.grd")
+d = split(d, "band")
+aoa = select(d, "AOA")
+```
+
+
+```{r}
+print(paste0("Random CV R2: ", round(CAST::global_validation(modelr)[2], 2), " --- Assumed Mapping error inside AOA."))
+```
+
+```{r}
+print(paste0("Percentage of valid predictions inside AOA: ",countAOA(aoa),"%"))
+```
+
+
+
+
+
+
+```{r}
+aoa[aoa == 1] = NA
+
+sla_rep_random = tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(select(d, "prediction"))+
+    tm_raster(palette = viridis::mako(50), style = "cont",
+              legend.is.portrait = TRUE, breaks = seq(0,20,2), title = "SLA [m²/kg]")+
+    tm_shape(aoa)+
+    tm_raster(palette = c("0" = "darkgoldenrod1"),
+              title = "", legend.show = TRUE, labels = c("0" = "Outside AOA"))+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+
+tmap_save(sla_rep_random, filename = "results/figures/sla_reproduced_random.svg", width = 15, height = 10, units = "cm")
+sla_rep_random
+```
+
+
+## Multi CV
+
+```{r}
+sla_rep_exp = raster("sla/reproduced_combinedcv/expected_error.grd")
+sla_rep_expaoa = read_stars("sla/reproduced_featurecv03/results/pred_di_aoa.grd")
+sla_rep_expaoa = sla_rep_expaoa %>% split("band") %>% select("AOA")
+
+
+sla_rep_expaoa[sla_rep_expaoa == 1] = NA
+
+sla_rep_expmap = tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(sla_rep_exp)+
+    tm_raster(palette = viridis::mako(50, direction = -1), style = "fixed",
+              legend.is.portrait = TRUE, breaks = c(0,1,2,3,4,5), title = "Expected\nRMSE")+
+    tm_shape(sla_rep_expaoa)+
+    tm_raster(palette = c("0" = "darkgoldenrod1"),
+              title = "", legend.show = TRUE, labels = c("0" = "Outside AOA"))+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+
+tmap_save(sla_rep_expmap, filename = "results/figures/sla_reproduced_expectederror.svg", width = 15, height = 10, units = "cm")
+sla_rep_expmap
+```
+
+
+
+## Multi CV with reduced Predictors
+
+
+```{r}
+sla_svs_exp = raster("sla/svs_combinedcv/expected_error.grd")
+sla_svs_expaoa = read_stars("sla/svs_featurecv03/results/pred_di_aoa.grd")
+sla_svs_expaoa = sla_svs_expaoa %>% split("band") %>% select("AOA")
+
+
+sla_svs_expaoa[sla_svs_expaoa == 1] = NA
+
+sla_svs_expmap = tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(sla_svs_exp)+
+    tm_raster(palette = viridis::mako(50, direction = -1), style = "fixed",
+              legend.is.portrait = TRUE, breaks = c(0,1,2,3,4,5), title = "Expected\nRMSE")+
+    tm_shape(sla_svs_expaoa)+
+    tm_raster(palette = c("0" = "darkgoldenrod1"),
+              title = "", legend.show = TRUE, labels = c("0" = "Outside AOA"))+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+
+tmap_save(sla_svs_expmap, filename = "results/figures/sla_svs_expectederror.svg", width = 15, height = 10, units = "cm")
+sla_svs_expmap
+```
+
+## Effect of SVS on Expected Error
+
+```{r}
+sla_exp_dif = sla_rep_exp - sla_svs_exp
+
+sla_diffmap = tm_shape(countries)+
+    tm_polygons(col = "grey80")+
+    tm_shape(sla_exp_dif)+
+    tm_raster(palette = scico::scico(n = 50, palette = "roma"), style = "fixed", breaks = c(-0.5,-0.1, 0.1,0.5,1,1.5),
+              legend.is.portrait = TRUE, title = "SVS Improvement", midpoint = 0)+
+    tm_layout(legend.show = TRUE,
+              bg.color = "white",
+              frame = FALSE,
+              panel.show = FALSE,
+              earth.boundary = c(-180, -88, 180, 88),
+              earth.boundary.color = "transparent")
+sla_diffmap
+
+tmap_save(sla_diffmap, filename = "results/figures/sla_expectederror_difference.svg", width = 15, height = 10, units = "cm")
+```
+
+
+## Errormodels 
+
+
+```{r}
+rep_perf = readRDS("sla/reproduced_combinedcv/performance.RDS")
+svs_perf = readRDS("sla/svs_combinedcv/performance.RDS")
+
+rep_errormodel = readRDS("sla/reproduced_combinedcv/errormodel.RDS")
+svs_errormodel = readRDS("sla/svs_combinedcv/errormodel.RDS")
+
+
+rep_perf$modeled = predict(rep_errormodel, rep_perf["DI"])
+svs_perf$modeled = predict(svs_errormodel, svs_perf["DI"])
+
+rep_perf$type = "Reproduced"
+svs_perf$type = "Simplified"
+
+perf = rbind(rep_perf, svs_perf)
+
+ggplot(perf, aes(x = DI, y = metric))+
+    geom_hex()+
+    scale_fill_gradientn(colors = viridis::viridis(50), trans = "log10", name = "Points [n]")+
+    scale_y_continuous(name = "RMSE")+
+    geom_line(color='red', mapping = aes(y = modeled, x = DI), lwd = 1)+
+        ggpubr::theme_pubclean()+
+    facet_wrap(.~type, scales = "free_x")+
+    theme(legend.position = "bottom", legend.background = element_blank())
+
+
+ggsave(filename = "results/figures/sla_errormodel.svg", width = 15, height = 10, units = "cm")
+
+```
+

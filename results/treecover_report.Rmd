@@ -119,7 +119,15 @@ models = readRDS("treecover/reproduced_spatialcv/rfmodel.RDS")
 ## Variable Importance
 
 ```{r}
-plot(varImp(modelr, scale = FALSE))
+vi = varImp(models, scale = FALSE)
+plot(vi)
+```
+
+
+**Relative Importance as depicted in the Supplementary Materials**
+
+```{r}
+vi$importance / sum(vi$importance) * 100
 ```
 
 
