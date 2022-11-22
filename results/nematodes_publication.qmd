@@ -1,11 +1,15 @@
 ---
-title: "Nemtodes Publication"
+title: "Global applicability publication figures: Nematodes"
 author: "Marvin Ludwig"
 format: html
+knitr:
+  opts_knit:
+    root.dir: "~/casestudies/global_applicability/"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
 
 library(sf)
 library(stars)
@@ -20,6 +24,7 @@ library(tmap)
 library(ggpubr)
 library(viridis)
 library(tidyverse)
+library(scam)
 
 sf_use_s2(FALSE)
 

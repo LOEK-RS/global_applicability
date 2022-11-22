@@ -1,7 +1,10 @@
 ---
-title: "SLA Publication"
+title: "Global applicability publication figures: SLA"
 author: "Marvin Ludwig"
 format: html
+knitr:
+  opts_knit:
+    root.dir: "~/casestudies/global_applicability/"
 ---
 
 ```{r setup, include=FALSE}
@@ -20,6 +23,7 @@ library(tmap)
 library(ggpubr)
 library(viridis)
 library(tidyverse)
+library(scam)
 
 sf_use_s2(FALSE)
 
